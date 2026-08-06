@@ -7,11 +7,9 @@ namespace MauiAppMinhasCompras
         public App()
         {
             InitializeComponent();
+
+            MainPage = new NavigationPage(new Views.ListaProduto());
         }
 
-        protected override Window CreateWindow(IActivationState? activationState)
-        {
-            return new Window(new AppShell());
-        }
     }
 }
