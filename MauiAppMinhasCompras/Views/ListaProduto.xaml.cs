@@ -12,6 +12,9 @@ public partial class ListaProduto : ContentPage
         InitializeComponent();
 
         lst_produtos.ItemsSource = lista;
+
+        // NOVO
+        pk_categoria.SelectedIndex = 0;
     }
 
     protected async override void OnAppearing()
@@ -45,25 +48,48 @@ public partial class ListaProduto : ContentPage
 
     private async void txt_search_TextChanged(object sender, TextChangedEventArgs e)
     {
+        await FiltrarProdutos();
+    }
+
+    // NOVO
+    private async void pk_categoria_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        await FiltrarProdutos();
+    }
+
+    // NOVO
+    private async Task FiltrarProdutos()
+    {
         try
         {
-            string q = e.NewTextValue;
+            string busca = txt_search.Text ?? "";
+            string categoria = pk_categoria.SelectedItem?.ToString();
 
-            lst_produtos.IsRefreshing = true;
+            List<Produto> tmp = await App.Db.GetAll();
+
+            // Filtro pela descrição
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                tmp = tmp.Where(p =>
+                    p.Descricao.Contains(
+                        busca,
+                        StringComparison.OrdinalIgnoreCase
+                    )).ToList();
+            }
+
+            // Filtro pela categoria
+            if (!string.IsNullOrEmpty(categoria) && categoria != "Todos")
+            {
+                tmp = tmp.Where(p => p.Categoria == categoria).ToList();
+            }
 
             lista.Clear();
-
-            List<Produto> tmp = await App.Db.Search(q);
 
             tmp.ForEach(i => lista.Add(i));
         }
         catch (Exception ex)
         {
             await DisplayAlert("Ops", ex.Message, "OK");
-        }
-        finally
-        {
-            lst_produtos.IsRefreshing = false;
         }
     }
 
@@ -74,6 +100,45 @@ public partial class ListaProduto : ContentPage
         string msg = $"O total é {soma:C}";
 
         DisplayAlert("Total dos Produtos", msg, "OK");
+    }
+
+    // NOVO
+    private async void ToolbarItem_Relatorio(object sender, EventArgs e)
+    {
+        try
+        {
+            List<Produto> produtos = await App.Db.GetAll();
+
+            var relatorio = produtos
+                .GroupBy(p => p.Categoria)
+                .Select(g => new
+                {
+                    Categoria = g.Key,
+                    Total = g.Sum(p => p.Total)
+                });
+
+            string mensagem = "";
+
+            foreach (var item in relatorio)
+            {
+                mensagem += $"{item.Categoria}: {item.Total:C}\n";
+            }
+
+            if (mensagem == "")
+            {
+                mensagem = "Nenhum produto cadastrado.";
+            }
+
+            await DisplayAlert(
+                "Gastos por Categoria",
+                mensagem,
+                "OK"
+            );
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
     }
 
     private async void MenuItem_Clicked(object sender, EventArgs e)
@@ -129,7 +194,7 @@ public partial class ListaProduto : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("Ops", ex.Message, "OK");
-        } 
+        }
         finally
         {
             lst_produtos.IsRefreshing = false;

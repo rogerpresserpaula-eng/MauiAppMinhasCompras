@@ -4,10 +4,10 @@ using SQLite;
 namespace MauiAppMinhasCompras.Helpers
 {
     public class SQLiteDatabaseHelper
-    { 
+    {
         readonly SQLiteAsyncConnection _conn;
 
-        public SQLiteDatabaseHelper(string path) 
+        public SQLiteDatabaseHelper(string path)
         {
             _conn = new SQLiteAsyncConnection(path);
             _conn.CreateTableAsync<Produto>().Wait();
@@ -18,13 +18,13 @@ namespace MauiAppMinhasCompras.Helpers
             return _conn.InsertAsync(p);
         }
 
-        public Task<List<Produto>> Update(Produto p) //OPERAÇÃO ATUALIZAR
+        public Task<List<Produto>> Update(Produto p) //OPERAÇÃO ATUALIZAR  - NOVO
         {
-            string sql = "UPDATE Produto SET Descricao=?, Quantidade=?, Preco=? WHERE Id=?";
+            string sql = "UPDATE Produto SET Descricao=?, Quantidade=?, Preco=?, Categoria=? WHERE Id=?";
 
             return _conn.QueryAsync<Produto>(
-                sql, p.Descricao, p.Quantidade, p.Preco, p.Id
-                );
+                sql, p.Descricao, p.Quantidade, p.Preco, p.Categoria, p.Id
+            );
         }
 
         public Task<int> Delete(int id) //OPERAÇÃO DELETAR
@@ -43,6 +43,5 @@ namespace MauiAppMinhasCompras.Helpers
 
             return _conn.QueryAsync<Produto>(sql);
         }
-
     }
 }
